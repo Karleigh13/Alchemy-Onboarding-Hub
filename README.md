@@ -1,6 +1,4 @@
-[alchemy-onboarding-hub.html](https://github.com/user-attachments/files/26800042/alchemy-onboarding-hub.html)
-# Alchemy-Onboarding-Hub
-The Alchemy Onboarding Hub reflects current status of domain onboarding in Alchemy, and provides an à la carte experience, allowing domains to hand-select which integrations they want to prioritize. This enables a more customized onboarding experience with reduced overhead while maintaining the ability to scale.
+[alchemy-onboarding-hub.html](https://github.com/user-attachments/files/26800111/alchemy-onboarding-hub.html)
 <!DOCTYPE html>
 <html lang="en">
 <head>
