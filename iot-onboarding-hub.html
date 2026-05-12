@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT — Alchemy Onboarding Hub</title>
+    <style>
+        :root { --aws-orange: #FF9900; --aws-dark: #232F3E; --aws-light: #37475A; --aws-blue: #147EB4; --green: #1B9C3F; --yellow: #D4A017; --red: #D13212; --gray: #687078; --bg: #F2F3F3; --card-bg: #FFFFFF; --border: #D5DBDB; --teal: #00838f; --purple: #7B1FA2; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: #16191F; line-height: 1.5; }
+        .header { background: var(--aws-dark); color: white; padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        .header h1 { font-size: 1.4rem; font-weight: 600; }
+        .header h1 span { color: var(--aws-orange); }
+        .header-meta { font-size: 0.85rem; color: #AAB7B8; }
+        .header-meta a { color: var(--aws-orange); text-decoration: none; }
+        .nav { background: var(--aws-light); padding: 0 2rem; display: flex; gap: 0; overflow-x: auto; }
+        .nav button { background: none; border: none; color: #AAB7B8; padding: 0.75rem 1.25rem; font-size: 0.85rem; cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
+        .nav button:hover { color: white; }
+        .nav button.active { color: white; border-bottom-color: var(--aws-orange); }
+        .main { padding: 1.5rem 2rem; max-width: 1400px; margin: 0 auto; }
+        .section { display: none; }
+        .section.active { display: block; }
+        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
+        .card h2 { font-size: 1.1rem; margin-bottom: 1rem; color: var(--aws-dark); }
+        .card h3 { font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--aws-light); }
+        .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .kpi { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+        .kpi-value { font-size: 1.8rem; font-weight: 700; color: var(--aws-dark); }
+        .kpi-label { font-size: 0.75rem; color: var(--gray); margin-top: 0.25rem; }
+        .status-badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .status-complete { background: #D5F5E3; color: #1B9C3F; }
+        .status-progress { background: #FEF9E7; color: #D4A017; }
+        .status-not-started { background: #FADBD8; color: #D13212; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th, td { padding: 0.6rem 0.8rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg); font-weight: 600; color: var(--aws-dark); cursor: pointer; }
+        th:hover { background: #E5E8E8; }
+        tr:hover { background: #FAFAFA; }
+        .progress-bar { width: 100%; height: 8px; background: #E5E8E8; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 4px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+        @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } .kpi-row { grid-template-columns: repeat(2, 1fr); } .nav { padding: 0 0.5rem; } .main { padding: 1rem; } }
+        .wgll-badge { display: inline-flex; align-items: center; gap: 0.3rem; background: #FFF8E1; border: 1px solid #FFD54F; padding: 0.15rem 0.5rem; border-radius: 12px; font-size: 0.7rem; }
+        .btn { padding: 0.5rem 1.25rem; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; }
+        .btn-primary { background: var(--aws-orange); color: white; }
+        .btn-primary:hover { background: #EC7211; }
+        .survey-goal-input { width: 100%; min-height: 100px; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; resize: vertical; }
+        .resource-card { display: flex; align-items: center; gap: 1rem; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; text-decoration: none; color: inherit; transition: box-shadow 0.2s; }
+        .resource-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .phase-card { border-left: 4px solid var(--aws-orange); padding: 1rem; margin-bottom: 0.75rem; background: white; border-radius: 0 8px 8px 0; cursor: pointer; }
+        .phase-card.complete { border-left-color: var(--green); }
+        .phase-card.in-progress { border-left-color: var(--yellow); }
+        .phase-card .phase-tasks { display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+        .phase-card.expanded .phase-tasks { display: block; }
+        .impact-card { border-left: 4px solid var(--aws-orange); margin-top: 1.5rem; }
+        select { padding: 0.4rem 0.8rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem; background: white; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1><span>IoT</span> — Alchemy Onboarding Hub</h1>
+            <div class="header-meta">Domain ID: IOT (14) | Status: Active | <a href="https://alchemy.solutions.aws.dev/#/domains/view/14" target="_blank">View in Alchemy ↗</a></div>
+        </div>
+        <div class="header-meta" style="text-align:right">
+            Last Updated: 2026-05-12<br>
+            AEIM Completion: <strong style="color:var(--aws-orange)">65%</strong>
+        </div>
+    </div>
+    <div class="nav" id="nav">
+        <button class="active" onclick="showTab('dashboard')">Dashboard</button>
+        <button onclick="showTab('survey')">📋 Prioritization</button>
+        <button onclick="showTab('roadmap')">🗺️ Roadmap</button>
+        <button onclick="showTab('taxonomy')">Taxonomy & Sales Plays</button>
+        <button onclick="showTab('capabilities')">Capabilities</button>
+        <button onclick="showTab('integrations')">Integrations</button>
+        <button onclick="showTab('crossdomain')">Cross-Domain</button>
+        <button onclick="showTab('wgll')">🏆 WGLL</button>
+        <button onclick="showTab('resources')">📚 Resources</button>
+    </div>
+    <div class="main">
+        <!-- DASHBOARD -->
+        <div class="section active" id="tab-dashboard">
+            <div class="kpi-row">
+                <div class="kpi"><div class="kpi-value">4/9</div><div class="kpi-label">Solution Areas Published</div></div>
+                <div class="kpi"><div class="kpi-value">13/18</div><div class="kpi-label">Use Cases Published</div></div>
+                <div class="kpi"><div class="kpi-value">13/15</div><div class="kpi-label">Sales Plays Published</div></div>
+                <div class="kpi"><div class="kpi-value">93%</div><div class="kpi-label">Highspot Coverage</div></div>
+                <div class="kpi"><div class="kpi-value">100%</div><div class="kpi-label">SFDC Tag Coverage</div></div>
+                <div class="kpi"><div class="kpi-value" style="color:var(--aws-orange)">65%</div><div class="kpi-label">AEIM Completion</div></div>
+            </div>
+
+            <!-- Impact Assessment -->
+            <div class="card impact-card">
+                <h2 style="display:flex;align-items:center;gap:0.5rem;">📊 Impact Assessment <span style="font-size:0.75rem;color:var(--gray);font-weight:400">— AWSentral Recommendations</span></h2>
+                <p style="font-size:0.85rem;color:var(--gray);margin-bottom:1rem;">How Alchemy content drives field engagement through AWSentral Recommendations</p>
+                <div class="kpi-row" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="kpi" style="border-top: 3px solid var(--aws-orange);"><div class="kpi-value" style="font-size:1.5rem;">1,247</div><div class="kpi-label">Total Recommendations Served</div></div>
+                    <div class="kpi" style="border-top: 3px solid var(--aws-blue);"><div class="kpi-value" style="font-size:1.5rem;color:var(--aws-blue);">389</div><div class="kpi-label">Recommendations Accepted</div></div>
+                    <div class="kpi" style="border-top: 3px solid var(--green);"><div class="kpi-value" style="font-size:1.5rem;color:var(--green);">31.2%</div><div class="kpi-label">Acceptance Rate</div></div>
+                </div>
+                <div class="kpi-row" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="kpi" style="border-top: 3px solid var(--teal);"><div class="kpi-value" style="font-size:1.5rem;color:var(--teal);">156</div><div class="kpi-label">Opps Created from Recommendations</div></div>
+                    <div class="kpi" style="border-top: 3px solid var(--aws-orange);"><div class="kpi-value" style="font-size:1.5rem;color:var(--aws-orange);">$47.3M</div><div class="kpi-label">Pipeline Generated</div></div>
+                    <div class="kpi" style="border-top: 3px solid var(--purple);"><div class="kpi-value" style="font-size:1.5rem;color:var(--purple);">892</div><div class="kpi-label">Total Opps with Any Tags Applied</div></div>
+                </div>
+                <div style="margin-top:1.25rem;padding:1rem;background:var(--bg);border-radius:8px;">
+                    <h3 style="font-size:0.9rem;margin-bottom:0.75rem;color:var(--aws-dark);">Recommendation Funnel</h3>
+                    <div style="display:flex;align-items:flex-end;gap:1.5rem;height:120px;padding:0 1rem;">
+                        <div style="display:flex;flex-direction:column;align-items:center;flex:1;"><div style="width:100%;background:var(--aws-orange);border-radius:4px 4px 0 0;height:100px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.9rem;">1,247</div><span style="font-size:0.75rem;color:var(--gray);margin-top:0.4rem;text-align:center;">Served</span></div>
+                        <div style="display:flex;flex-direction:column;align-items:center;flex:1;"><div style="width:100%;background:var(--aws-blue);border-radius:4px 4px 0 0;height:31px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.85rem;">389</div><span style="font-size:0.75rem;color:var(--gray);margin-top:0.4rem;text-align:center;">Accepted (31%)</span></div>
+                        <div style="display:flex;flex-direction:column;align-items:center;flex:1;"><div style="width:100%;background:var(--teal);border-radius:4px 4px 0 0;height:12px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.75rem;">156</div><span style="font-size:0.75rem;color:var(--gray);margin-top:0.4rem;text-align:center;">Opps Created</span></div>
+                        <div style="display:flex;flex-direction:column;align-items:center;flex:1;"><div style="width:100%;background:var(--purple);border-radius:4px 4px 0 0;height:71px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.9rem;">892</div><span style="font-size:0.75rem;color:var(--gray);margin-top:0.4rem;text-align:center;">All Tagged Opps</span></div>
+                    </div>
+                </div>
+                <p style="font-size:0.75rem;color:var(--gray);margin-top:1rem;font-style:italic;">⚠️ Placeholder data shown. Data source: <a href="https://us-east-1.quicksight.aws.amazon.com/sn/account/amazonbi/dashboards/1112a142-24dc-4aab-bb4d-b51d12d3a827/sheets/1112a142-24dc-4aab-bb4d-b51d12d3a827_973532d2-9a82-4729-9cad-2281cc4e336d" target="_blank" style="color:var(--aws-orange);">View Full AWSentral Recommendations Dashboard ↗</a></p>
+            </div>
+
+            <div class="grid-2" style="margin-top:1rem;">
+                <div class="card">
+                    <h2>Capability Progress</h2>
+                    <div style="margin-bottom:0.75rem"><div style="display:flex;justify-content:space-between;font-size:0.85rem"><span>Planning (5/5)</span><span>100%</span></div><div class="progress-bar"><div class="progress-fill" style="width:100%;background:var(--green)"></div></div></div>
+                    <div style="margin-bottom:0.75rem"><div style="display:flex;justify-content:space-between;font-size:0.85rem"><span>Authoring (3/6)</span><span>50%</span></div><div class="progress-bar"><div class="progress-fill" style="width:50%;background:var(--yellow)"></div></div></div>
+                    <div style="margin-bottom:0.75rem"><div style="display:flex;justify-content:space-between;font-size:0.85rem"><span>Impact (1/3)</span><span>33%</span></div><div class="progress-bar"><div class="progress-fill" style="width:33%;background:var(--red)"></div></div></div>
+                    <div style="margin-bottom:0.75rem"><div style="display:flex;justify-content:space-between;font-size:0.85rem"><span>Discovery (3/3)</span><span>100%</span></div><div class="progress-bar"><div class="progress-fill" style="width:100%;background:var(--green)"></div></div></div>
+                </div>
+                <div class="card">
+                    <h2>Integration Readiness</h2>
+                    <div style="margin-bottom:0.75rem"><div style="display:flex;justify-content:space-between;font-size:0.85rem"><span>AWSentral Recommendations</span><span class="status-badge status-complete">Live</span></div></div>
+                    <div style="margin-bottom:0.75rem"><div style="display:flex;justify-content:space-between;font-size:0.85rem"><span>Highspot for Field</span><span class="status-badge status-complete">Live</span></div></div>
+                    <div style="margin-bottom:0.75rem"><div style="display:flex;justify-content:space-between;font-size:0.85rem"><span>DataBook</span><span class="status-badge status-complete">Live</span></div></div>
+                    <div style="margin-bottom:0.75rem"><div style="display:flex;justify-content:space-between;font-size:0.85rem"><span>Field Advisor</span><span class="status-badge status-progress">Planned</span></div></div>
+                    <div style="margin-bottom:0.75rem"><div style="display:flex;justify-content:space-between;font-size:0.85rem"><span>Autonomous Prospecting</span><span class="status-badge status-progress">Planned</span></div></div>
+                    <div style="margin-bottom:0.75rem"><div style="display:flex;justify-content:space-between;font-size:0.85rem"><span>CampaignSentral</span><span class="status-badge status-complete">Live</span></div></div>
+                    <div style="margin-bottom:0.75rem"><div style="display:flex;justify-content:space-between;font-size:0.85rem"><span>GTM Performance Dashboard</span><span class="status-badge status-complete">Live</span></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SURVEY TAB -->
+        <div class="section" id="tab-survey">
+            <div class="card">
+                <h2>📋 Goal-Aware Prioritization Analyzer</h2>
+                <p style="margin-bottom:1rem;color:var(--gray)">Paste your OP1 goals below to get recommended integration priorities for your IoT domain.</p>
+                <textarea class="survey-goal-input" id="goalInput" placeholder="Paste your OP1 goals, GTM priorities, or domain strategy here..."></textarea>
+                <button class="btn btn-primary" style="margin-top:0.75rem" onclick="analyzeGoals()">Analyze Goals</button>
+                <div id="goalResults" style="margin-top:1rem;display:none;"></div>
+            </div>
+            <div class="card">
+                <h2>Manual Priority Ranking</h2>
+                <p style="margin-bottom:1rem;color:var(--gray)">Rank the 7 integration experiences by priority for your domain (1 = highest):</p>
+                <table>
+                    <tr><th>Integration Experience</th><th>Priority</th><th>Current Status</th></tr>
+                    <tr><td>AWSentral Account Recommendations</td><td><select><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select></td><td><span class="status-badge status-complete">Live</span></td></tr>
+                    <tr><td>Highspot for Field</td><td><select><option>2</option><option>1</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select></td><td><span class="status-badge status-complete">Live</span></td></tr>
+                    <tr><td>DataBook</td><td><select><option>3</option><option>1</option><option>2</option><option>4</option><option>5</option><option>6</option><option>7</option></select></td><td><span class="status-badge status-complete">Live</span></td></tr>
+                    <tr><td>Field Advisor</td><td><select><option>4</option><option>1</option><option>2</option><option>3</option><option>5</option><option>6</option><option>7</option></select></td><td><span class="status-badge status-progress">Planned</span></td></tr>
+                    <tr><td>Autonomous Prospecting</td><td><select><option>5</option><option>1</option><option>2</option><option>3</option><option>4</option><option>6</option><option>7</option></select></td><td><span class="status-badge status-progress">Planned</span></td></tr>
+                    <tr><td>CampaignSentral</td><td><select><option>6</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>7</option></select></td><td><span class="status-badge status-complete">Live</span></td></tr>
+                    <tr><td>GTM Performance Dashboard</td><td><select><option>7</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></td><td><span class="status-badge status-complete">Live</span></td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ROADMAP TAB -->
+        <div class="section" id="tab-roadmap">
+            <div class="card">
+                <h2>🗺️ Integration Roadmap</h2>
+                <p style="margin-bottom:1.5rem;color:var(--gray)">Phased plan based on IoT's current maturity and priorities.</p>
+                <div class="phase-card complete" onclick="this.classList.toggle('expanded')">
+                    <strong>Phase 1: Foundation ✅</strong> <span style="font-size:0.8rem;color:var(--gray)">— Complete</span>
+                    <div class="phase-tasks"><ul style="margin-left:1.5rem;font-size:0.85rem"><li>✅ Domain registered in Alchemy</li><li>✅ Taxonomy aligned (9 SAs)</li><li>✅ Use cases authored (18)</li><li>✅ SFDC tags created (18 tags, 100% coverage)</li></ul></div>
+                </div>
+                <div class="phase-card complete" onclick="this.classList.toggle('expanded')">
+                    <strong>Phase 2: Content & Publishing ✅</strong> <span style="font-size:0.8rem;color:var(--gray)">— Mostly Complete</span>
+                    <div class="phase-tasks"><ul style="margin-left:1.5rem;font-size:0.85rem"><li>✅ 13/15 sales plays published (87%)</li><li>✅ 14/15 plays on Highspot (93%)</li><li>⏳ 5 use cases still unpublished</li><li>⏳ 5 solution areas still in draft</li></ul></div>
+                </div>
+                <div class="phase-card in-progress" onclick="this.classList.toggle('expanded')">
+                    <strong>Phase 3: Integration & Discovery 🔄</strong> <span style="font-size:0.8rem;color:var(--gray)">— In Progress</span>
+                    <div class="phase-tasks"><ul style="margin-left:1.5rem;font-size:0.85rem"><li>✅ AWSentral recommendations live</li><li>✅ Highspot integration live</li><li>⏳ Expand demo coverage (currently 23%)</li><li>⏳ Expand workshop coverage (currently 23%)</li><li>⏳ Field Advisor integration pending</li></ul></div>
+                </div>
+                <div class="phase-card" onclick="this.classList.toggle('expanded')">
+                    <strong>Phase 4: Optimization & Scale</strong> <span style="font-size:0.8rem;color:var(--gray)">— Upcoming</span>
+                    <div class="phase-tasks"><ul style="margin-left:1.5rem;font-size:0.85rem"><li>⬜ Engagement analytics enhancement</li><li>⬜ Content lifecycle management formalization</li><li>⬜ Cross-domain subscription model</li><li>⬜ Autonomous Prospecting integration</li></ul></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAXONOMY & SALES PLAYS TAB -->
+        <div class="section" id="tab-taxonomy">
+            <div class="card">
+                <h2>Solution Areas (9)</h2>
+                <table>
+                    <tr><th>Display ID</th><th>Name</th><th>Status</th><th>Published</th></tr>
+                    <tr><td>SA-IOT-00001</td><td>Industrial IoT & Manufacturing</td><td><span class="status-badge status-complete">Meets Bar</span></td><td>✅</td></tr>
+                    <tr><td>SA-IOT-00002</td><td>Connected Home & Smart Buildings</td><td><span class="status-badge status-complete">Meets Bar</span></td><td>✅</td></tr>
+                    <tr><td>SA-IOT-00003</td><td>Fleet Management & Logistics</td><td><span class="status-badge status-complete">Meets Bar</span></td><td>✅</td></tr>
+                    <tr><td>SA-IOT-00004</td><td>Energy & Utilities IoT</td><td><span class="status-badge status-complete">Meets Bar</span></td><td>✅</td></tr>
+                    <tr><td>SA-IOT-00005</td><td>Connected Vehicle & Automotive</td><td><span class="status-badge status-progress">Draft</span></td><td>❌</td></tr>
+                    <tr><td>SA-IOT-00006</td><td>Smart Agriculture</td><td><span class="status-badge status-progress">Draft</span></td><td>❌</td></tr>
+                    <tr><td>SA-IOT-00007</td><td>Healthcare IoT & Wearables</td><td><span class="status-badge status-progress">Draft</span></td><td>❌</td></tr>
+                    <tr><td>SA-IOT-00008</td><td>Edge Computing & Greengrass</td><td><span class="status-badge status-progress">Draft</span></td><td>❌</td></tr>
+                    <tr><td>SA-IOT-00009</td><td>IoT Security & Device Management</td><td><span class="status-badge status-progress">Draft</span></td><td>❌</td></tr>
+                </table>
+            </div>
+            <div class="card">
+                <h2>Use Cases (18) — 13 Published, 18 SFDC Tagged</h2>
+                <table>
+                    <tr><th>ID</th><th>Use Case</th><th>Published</th><th>SFDC Tag</th><th>Prioritized</th></tr>
+                    <tr><td>UC-IOT-00001</td><td>Predictive Maintenance</td><td>✅</td><td>🏷️</td><td>⭐</td></tr>
+                    <tr><td>UC-IOT-00002</td><td>Asset Monitoring & Tracking</td><td>✅</td><td>🏷️</td><td>⭐</td></tr>
+                    <tr><td>UC-IOT-00003</td><td>Connected Vehicle Telematics</td><td>✅</td><td>🏷️</td><td>⭐</td></tr>
+                    <tr><td>UC-IOT-00004</td><td>Smart Building Energy Management</td><td>✅</td><td>🏷️</td><td>⭐</td></tr>
+                    <tr><td>UC-IOT-00005</td><td>Fleet Management & Route Optimization</td><td>✅</td><td>🏷️</td><td>⭐</td></tr>
+                    <tr><td>UC-IOT-00006</td><td>Industrial Process Optimization</td><td>✅</td><td>🏷️</td><td>⭐</td></tr>
+                    <tr><td>UC-IOT-00007</td><td>Remote Patient Monitoring</td><td>✅</td><td>🏷️</td><td></td></tr>
+                    <tr><td>UC-IOT-00008</td><td>Digital Twin Simulation</td><td>✅</td><td>🏷️</td><td>⭐</td></tr>
+                    <tr><td>UC-IOT-00009</td><td>Edge ML & Greengrass Inference</td><td>✅</td><td>🏷️</td><td>⭐</td></tr>
+                    <tr><td>UC-IOT-00010</td><td>Device Lifecycle Management</td><td>✅</td><td>🏷️</td><td>⭐</td></tr>
+                    <tr><td>UC-IOT-00011</td><td>Smart Grid & Utility Monitoring</td><td>✅</td><td>🏷️</td><td></td></tr>
+                    <tr><td>UC-IOT-00012</td><td>Precision Agriculture</td><td>✅</td><td>🏷️</td><td></td></tr>
+                    <tr><td>UC-IOT-00013</td><td>Supply Chain Visibility</td><td>✅</td><td>🏷️</td><td></td></tr>
+                    <tr><td>UC-IOT-00014</td><td>Condition-Based Monitoring</td><td>❌</td><td>🏷️</td><td></td></tr>
+                    <tr><td>UC-IOT-00015</td><td>Smart Home Automation</td><td>❌</td><td>🏷️</td><td></td></tr>
+                    <tr><td>UC-IOT-00016</td><td>Environmental Monitoring</td><td>❌</td><td>🏷️</td><td></td></tr>
+                    <tr><td>UC-IOT-00017</td><td>Wearable Health Monitoring</td><td>❌</td><td>🏷️</td><td></td></tr>
+                    <tr><td>UC-IOT-00018</td><td>Connected Retail & Smart Stores</td><td>❌</td><td>🏷️</td><td></td></tr>
+                </table>
+            </div>
+            <div class="card">
+                <h2>Sales Plays (15) — 13 Published, 14 on Highspot</h2>
+                <p style="font-size:0.85rem;color:var(--gray);margin-bottom:1rem;">9 prioritized plays | 93% Highspot coverage</p>
+                <table>
+                    <tr><th>Play</th><th>Status</th><th>Highspot</th><th>Prioritized</th></tr>
+                    <tr><td>Internet of Things (IoT) - Domain Play</td><td><span class="status-badge status-complete">Published</span></td><td>✅</td><td>⭐</td></tr>
+                    <tr><td>Industrial IoT & Predictive Maintenance</td><td><span class="status-badge status-complete">Published</span></td><td>✅</td><td>⭐</td></tr>
+                    <tr><td>Connected Vehicle Solutions</td><td><span class="status-badge status-complete">Published</span></td><td>✅</td><td>⭐</td></tr>
+                    <tr><td>Smart Building & Energy Management</td><td><span class="status-badge status-complete">Published</span></td><td>✅</td><td>⭐</td></tr>
+                    <tr><td>Fleet Management & Telematics</td><td><span class="status-badge status-complete">Published</span></td><td>✅</td><td>⭐</td></tr>
+                    <tr><td>Edge Computing with Greengrass</td><td><span class="status-badge status-complete">Published</span></td><td>✅</td><td>⭐</td></tr>
+                    <tr><td>Digital Twin & Simulation</td><td><span class="status-badge status-complete">Published</span></td><td>✅</td><td>⭐</td></tr>
+                    <tr><td>IoT Security & Zero Trust</td><td><span class="status-badge status-complete">Published</span></td><td>✅</td><td>⭐</td></tr>
+                    <tr><td>Healthcare IoT & Remote Monitoring</td><td><span class="status-badge status-complete">Published</span></td><td>✅</td><td>⭐</td></tr>
+                    <tr><td>Smart Agriculture & Precision Farming</td><td><span class="status-badge status-complete">Published</span></td><td>✅</td><td></td></tr>
+                    <tr><td>Supply Chain IoT Visibility</td><td><span class="status-badge status-complete">Published</span></td><td>✅</td><td></td></tr>
+                    <tr><td>IoT Data Analytics & Insights</td><td><span class="status-badge status-complete">Published</span></td><td>✅</td><td></td></tr>
+                    <tr><td>Device Management at Scale</td><td><span class="status-badge status-complete">Published</span></td><td>✅</td><td></td></tr>
+                    <tr><td>Smart Utility & Grid Modernization</td><td><span class="status-badge status-progress">Draft</span></td><td>✅</td><td></td></tr>
+                    <tr><td>Retail IoT & Smart Stores</td><td><span class="status-badge status-progress">Draft</span></td><td>❌</td><td></td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- CAPABILITIES TAB -->
+        <div class="section" id="tab-capabilities">
+            <div class="card">
+                <h2>AEIM Capability Assessment (11/17 Complete — 65%)</h2>
+                <div class="progress-bar" style="height:12px;margin-bottom:1.5rem"><div class="progress-fill" style="width:65%;background:var(--green)"></div></div>
+                
+                <h3 style="margin:1rem 0 0.5rem;border-bottom:2px solid var(--green);padding-bottom:0.25rem">✅ Planning (5/5)</h3>
+                <table>
+                    <tr><th>Capability</th><th>Status</th><th>Detail</th></tr>
+                    <tr><td>Taxonomy Refresh</td><td><span class="status-badge status-complete">Complete</span></td><td style="font-size:0.8rem;color:var(--gray)">9 SAs defined, Aura redesign Apr 2025</td></tr>
+                    <tr><td>Use Case Prioritization</td><td><span class="status-badge status-complete">Complete</span></td><td style="font-size:0.8rem;color:var(--gray)">9 UCs prioritized with domain strategy</td></tr>
+                    <tr><td>Sales Play Prioritization</td><td><span class="status-badge status-complete">Complete</span></td><td style="font-size:0.8rem;color:var(--gray)">9 plays prioritized for FY26</td></tr>
+                    <tr><td>Stakeholder Alignment</td><td><span class="status-badge status-complete">Complete</span></td><td style="font-size:0.8rem;color:var(--gray)">Domain team & TFC IoT aligned</td></tr>
+                    <tr><td>Readiness Assessment</td><td><span class="status-badge status-complete">Complete</span></td><td style="font-size:0.8rem;color:var(--gray)">Integration readiness evaluated</td></tr>
+                </table>
+
+                <h3 style="margin:1.5rem 0 0.5rem;border-bottom:2px solid var(--yellow);padding-bottom:0.25rem">🔄 Authoring (3/6)</h3>
+                <table>
+                    <tr><th>Capability</th><th>Status</th><th>Detail</th></tr>
+                    <tr><td>Use Case Authoring</td><td><span class="status-badge status-progress">In Progress</span></td><td style="font-size:0.8rem;color:var(--gray)">13/18 published (72%) — 5 UCs pending</td></tr>
+                    <tr><td>Sales Play Authoring</td><td><span class="status-badge status-complete">Complete</span></td><td style="font-size:0.8rem;color:var(--gray)">13/15 published (87%)</td></tr>
+                    <tr><td>Content Quality Bar Raise</td><td><span class="status-badge status-progress">In Progress</span></td><td style="font-size:0.8rem;color:var(--gray)">5 SAs in draft need bar review</td></tr>
+                    <tr><td>OTE Tag Creation</td><td><span class="status-badge status-complete">Complete</span></td><td style="font-size:0.8rem;color:var(--gray)">18/18 UCs tagged (100%)</td></tr>
+                    <tr><td>🎮 Demo Mapping</td><td><span class="status-badge status-progress">In Progress</span></td><td style="font-size:0.8rem;color:var(--gray)">3/13 published UCs have demos (23%)</td></tr>
+                    <tr><td>🏫 Workshop Mapping</td><td><span class="status-badge status-progress">In Progress</span></td><td style="font-size:0.8rem;color:var(--gray)">3/13 published UCs have workshops (23%)</td></tr>
+                </table>
+
+                <h3 style="margin:1.5rem 0 0.5rem;border-bottom:2px solid var(--red);padding-bottom:0.25rem">⚠️ Impact (1/3)</h3>
+                <table>
+                    <tr><th>Capability</th><th>Status</th><th>Detail</th></tr>
+                    <tr><td>GTM Performance Management</td><td><span class="status-badge status-complete">Complete</span></td><td style="font-size:0.8rem;color:var(--gray)">Active CampaignSentral dashboard</td></tr>
+                    <tr><td>Content Lifecycle Management</td><td><span class="status-badge status-progress">In Progress</span></td><td style="font-size:0.8rem;color:var(--gray)">5 unpublished SAs need review cycle</td></tr>
+                    <tr><td>Engagement Analytics</td><td><span class="status-badge status-progress">In Progress</span></td><td style="font-size:0.8rem;color:var(--gray)">Basic tracking active, needs enhancement</td></tr>
+                </table>
+
+                <h3 style="margin:1.5rem 0 0.5rem;border-bottom:2px solid var(--green);padding-bottom:0.25rem">✅ Discovery (3/3)</h3>
+                <table>
+                    <tr><th>Capability</th><th>Status</th><th>Detail</th></tr>
+                    <tr><td>Highspot Integration</td><td><span class="status-badge status-complete">Complete</span></td><td style="font-size:0.8rem;color:var(--gray)">14/15 plays on Highspot (93%)</td></tr>
+                    <tr><td>Field Recommendations</td><td><span class="status-badge status-complete">Complete</span></td><td style="font-size:0.8rem;color:var(--gray)">AWSentral recommendations active</td></tr>
+                    <tr><td>Cross-Domain Mapping</td><td><span class="status-badge status-complete">Complete</span></td><td style="font-size:0.8rem;color:var(--gray)">8 domains connected</td></tr>
+                </table>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <h2>🎮 Demo Mapping Detail</h2>
+                    <p style="font-size:0.85rem;color:var(--gray);margin-bottom:0.75rem;">Coverage: 3/13 published UCs (23%)</p>
+                    <h3>Available Demos (2)</h3>
+                    <table>
+                        <tr><th>Demo</th><th>Mapped UCs</th></tr>
+                        <tr><td>E-Bike Smart Factory</td><td>Predictive Maintenance, Asset Monitoring</td></tr>
+                        <tr><td>Smart Machines - Maintenance Assistant</td><td>Digital Twin Simulation</td></tr>
+                    </table>
+                    <h3 style="margin-top:1rem;color:var(--red)">❌ Published UCs Missing Demos (10)</h3>
+                    <ul style="font-size:0.8rem;color:var(--gray);margin-left:1.5rem;">
+                        <li>Connected Vehicle Telematics</li><li>Smart Building Energy Management</li><li>Fleet Management & Route Optimization</li><li>Industrial Process Optimization</li><li>Remote Patient Monitoring</li><li>Edge ML & Greengrass Inference</li><li>Device Lifecycle Management</li><li>Smart Grid & Utility Monitoring</li><li>Precision Agriculture</li><li>Supply Chain Visibility</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h2>🏫 Workshop Mapping Detail</h2>
+                    <p style="font-size:0.85rem;color:var(--gray);margin-bottom:0.75rem;">Coverage: 3/13 published UCs (23%)</p>
+                    <h3>Available Workshops (3)</h3>
+                    <table>
+                        <tr><th>Workshop</th><th>Community</th><th>Mapped UCs</th></tr>
+                        <tr><td>AWS IoT Core - Basic</td><td>TFC IoT</td><td>Fleet Management</td></tr>
+                        <tr><td>AWS IoT Device Mgmt - Basic</td><td>TFC IoT</td><td>Device Lifecycle</td></tr>
+                        <tr><td>Greengrass nucleus lite</td><td>TFC IoT</td><td>Edge ML & Greengrass</td></tr>
+                    </table>
+                    <h3 style="margin-top:1rem;color:var(--red)">❌ Published UCs Missing Workshops (10)</h3>
+                    <ul style="font-size:0.8rem;color:var(--gray);margin-left:1.5rem;">
+                        <li>Predictive Maintenance</li><li>Asset Monitoring & Tracking</li><li>Connected Vehicle Telematics</li><li>Smart Building Energy Management</li><li>Industrial Process Optimization</li><li>Remote Patient Monitoring</li><li>Digital Twin Simulation</li><li>Smart Grid & Utility Monitoring</li><li>Precision Agriculture</li><li>Supply Chain Visibility</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- INTEGRATIONS TAB -->
+        <div class="section" id="tab-integrations">
+            <div class="card">
+                <h2>Integration Experiences (5/7 Live)</h2>
+                <table>
+                    <tr><th>Experience</th><th>Status</th><th>Details</th><th>Benchmark</th></tr>
+                    <tr><td>AWSentral Account Recommendations</td><td><span class="status-badge status-complete">Live</span></td><td style="font-size:0.8rem">18 OTE tags driving recommendations across all IoT accounts</td><td><span class="wgll-badge">🏆 WGLL: 100% tag coverage</span></td></tr>
+                    <tr><td>Highspot for Field</td><td><span class="status-badge status-complete">Live</span></td><td style="font-size:0.8rem">14/15 plays published to Highspot (93% coverage)</td><td><span class="wgll-badge">🏆 Near WGLL level</span></td></tr>
+                    <tr><td>DataBook</td><td><span class="status-badge status-complete">Live</span></td><td style="font-size:0.8rem">IoT domain data available in DataBook for account intelligence</td><td></td></tr>
+                    <tr><td>Field Advisor</td><td><span class="status-badge status-progress">Planned</span></td><td style="font-size:0.8rem">Pending FA integration with IoT domain content</td><td></td></tr>
+                    <tr><td>Autonomous Prospecting</td><td><span class="status-badge status-progress">Planned</span></td><td style="font-size:0.8rem">IoT signals to feed proactive outreach</td><td></td></tr>
+                    <tr><td>CampaignSentral</td><td><span class="status-badge status-complete">Live</span></td><td style="font-size:0.8rem">IoT campaigns tracked in QuickSight</td><td></td></tr>
+                    <tr><td>GTM Performance Dashboard</td><td><span class="status-badge status-complete">Live</span></td><td style="font-size:0.8rem">Performance metrics active and reporting</td><td></td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- CROSS-DOMAIN TAB -->
+        <div class="section" id="tab-crossdomain">
+            <div class="card">
+                <h2>Cross-Domain Opportunities (8 Connected Domains)</h2>
+                <p style="margin-bottom:1rem;color:var(--gray)">IoT content is referenced in 8 other WWSO domains — collaboration opportunities for shared UCs and cross-domain sales plays.</p>
+                <table>
+                    <tr><th>Domain</th><th>Connection Type</th><th>Opportunity</th></tr>
+                    <tr><td>Aerospace & Satellite</td><td>UC reference</td><td>Workforce safety IoT sensors, predictive maintenance for aircraft</td></tr>
+                    <tr><td>Energy & Utilities</td><td>Sales Play overlap</td><td>Smart grid monitoring, utility IoT, enterprise asset management</td></tr>
+                    <tr><td>Automotive</td><td>UC + Play overlap</td><td>Connected vehicle telematics, V2X communication, fleet mgmt</td></tr>
+                    <tr><td>Healthcare & Life Sciences</td><td>UC reference</td><td>Remote patient monitoring, medical device connectivity</td></tr>
+                    <tr><td>Manufacturing</td><td>Sales Play overlap</td><td>Industrial IoT, digital twin, predictive maintenance</td></tr>
+                    <tr><td>Agriculture</td><td>Workshop topic</td><td>Precision agriculture, crop monitoring sensors</td></tr>
+                    <tr><td>Hi-Tech & Semiconductor</td><td>UC reference</td><td>Chip-to-cloud IoT, edge compute hardware</td></tr>
+                    <tr><td>Supply Chain & Logistics</td><td>Workshop topic</td><td>Asset tracking, cold chain monitoring, visibility</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- WGLL TAB -->
+        <div class="section" id="tab-wgll">
+            <div class="card">
+                <h2>🏆 What Good Looks Like — Benchmarks</h2>
+                <table>
+                    <tr><th>Metric</th><th style="background:#FFF8E1">IoT (You)</th><th>Retail</th><th>Financial Svcs</th><th>CPG</th><th>Automotive</th></tr>
+                    <tr><td>Published Sales Plays</td><td style="background:#FFF8E1"><strong>13</strong></td><td>40</td><td>49</td><td>40</td><td>35</td></tr>
+                    <tr><td>Highspot Coverage</td><td style="background:#FFF8E1"><strong>93%</strong></td><td>100%</td><td>95%</td><td>90%</td><td>92%</td></tr>
+                    <tr><td>SFDC Tags</td><td style="background:#FFF8E1"><strong>18</strong></td><td>150</td><td>173</td><td>113</td><td>114</td></tr>
+                    <tr><td>Published UCs</td><td style="background:#FFF8E1"><strong>13</strong></td><td>45</td><td>52</td><td>38</td><td>40</td></tr>
+                    <tr><td>AEIM Completion</td><td style="background:#FFF8E1"><strong>65%</strong></td><td>~85%</td><td>~80%</td><td>~75%</td><td>~78%</td></tr>
+                </table>
+            </div>
+            <div class="card">
+                <h2>Top Performer Highlights</h2>
+                <div class="grid-2">
+                    <div style="padding:1rem;border:1px solid var(--border);border-radius:8px">
+                        <h3>🏆 Retail</h3>
+                        <p style="font-size:0.85rem;color:var(--gray)">40 published plays, 100% Highspot, 150 SFDC tags. Gold standard for content coverage and field integration.</p>
+                    </div>
+                    <div style="padding:1rem;border:1px solid var(--border);border-radius:8px">
+                        <h3>🏆 Financial Services</h3>
+                        <p style="font-size:0.85rem;color:var(--gray)">49 published plays, 173 SFDC tags. Highest tag density — deep account-level targeting.</p>
+                    </div>
+                    <div style="padding:1rem;border:1px solid var(--border);border-radius:8px">
+                        <h3>🏆 CPG</h3>
+                        <p style="font-size:0.85rem;color:var(--gray)">40 published plays, 113 SFDC tags. Strong content lifecycle with regular refresh cadence.</p>
+                    </div>
+                    <div style="padding:1rem;border:1px solid var(--border);border-radius:8px">
+                        <h3>🏆 Automotive</h3>
+                        <p style="font-size:0.85rem;color:var(--gray)">114 SFDC tags, cross-domain leader. Best-in-class collaboration across IoT, Manufacturing, Supply Chain.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESOURCES TAB -->
+        <div class="section" id="tab-resources">
+            <div class="card">
+                <h2>📚 Resources & Links</h2>
+                <div class="grid-3" style="margin-top:1rem">
+                    <a href="https://alchemy.solutions.aws.dev/#/domains/view/14" target="_blank" class="resource-card">
+                        <span style="font-size:1.5rem">🔬</span>
+                        <div><strong>IoT in Alchemy</strong><br><span style="font-size:0.8rem;color:var(--gray)">View domain, SAs, UCs, plays</span></div>
+                    </a>
+                    <a href="https://w.amazon.com/bin/view/AWS/Teams/AWS_Specialists_Partners_Organization_ASP/Specialist_Technology_Team/Specialist_GTM_Tech/Alchemy/" target="_blank" class="resource-card">
+                        <span style="font-size:1.5rem">📖</span>
+                        <div><strong>Alchemy Wiki</strong><br><span style="font-size:0.8rem;color:var(--gray)">Documentation & guides</span></div>
+                    </a>
+                    <a href="https://w.amazon.com/bin/view/AWS/Teams/AWS_Specialists_Partners_Organization_ASP/Specialist_Technology_Team/Specialist_GTM_Tech/Alchemy/Integrations/" target="_blank" class="resource-card">
+                        <span style="font-size:1.5rem">🔗</span>
+                        <div><strong>Alchemy Integrations</strong><br><span style="font-size:0.8rem;color:var(--gray)">Integration details & guides</span></div>
+                    </a>
+                    <a href="https://us-east-1.quicksight.aws.amazon.com/sn/account/amazonbi/apps/4045e1b8-4bef-450a-94db-f6d9c6125421/edit" target="_blank" class="resource-card">
+                        <span style="font-size:1.5rem">📊</span>
+                        <div><strong>CampaignSentral</strong><br><span style="font-size:0.8rem;color:var(--gray)">QuickSight performance app</span></div>
+                    </a>
+                    <a href="https://us-east-1.quicksight.aws.amazon.com/sn/account/amazonbi/dashboards/1112a142-24dc-4aab-bb4d-b51d12d3a827" target="_blank" class="resource-card">
+                        <span style="font-size:1.5rem">📈</span>
+                        <div><strong>OTE Engagement Dashboard</strong><br><span style="font-size:0.8rem;color:var(--gray)">AWSentral recommendations metrics</span></div>
+                    </a>
+                    <a href="https://quip-amazon.com/HnL5AcA7zgon/Specialist-GTM-Tech-Team-Office-Hours" target="_blank" class="resource-card">
+                        <span style="font-size:1.5rem">🕐</span>
+                        <div><strong>Office Hours</strong><br><span style="font-size:0.8rem;color:var(--gray)">Weekly GTM Tech support</span></div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    try {
+        function showTab(id) {
+            try {
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+                var tab = document.getElementById('tab-' + id);
+                if (tab) tab.classList.add('active');
+                var buttons = document.querySelectorAll('.nav button');
+                var tabNames = ['dashboard','survey','roadmap','taxonomy','capabilities','integrations','crossdomain','wgll','resources'];
+                var idx = tabNames.indexOf(id);
+                if (idx >= 0 && buttons[idx]) buttons[idx].classList.add('active');
+            } catch(e) { console.error('Tab error:', e); }
+        }
+
+        function analyzeGoals() {
+            try {
+                var input = document.getElementById('goalInput').value.toLowerCase();
+                var results = document.getElementById('goalResults');
+                if (!input.trim()) { results.style.display='none'; return; }
+                
+                var keywords = {
+                    'pipeline': { priority: 'AWSentral Recommendations', reason: 'Drives account-level pipeline through OTE tag matching' },
+                    'revenue': { priority: 'AWSentral Recommendations', reason: 'Direct pipeline generation from field recommendations' },
+                    'field enablement': { priority: 'Highspot for Field', reason: 'Content discovery and enablement for SAs' },
+                    'content': { priority: 'Highspot for Field', reason: 'Sales play delivery to field teams' },
+                    'account intelligence': { priority: 'DataBook', reason: 'Enriched account data for targeting' },
+                    'prospecting': { priority: 'Autonomous Prospecting', reason: 'AI-driven proactive outreach' },
+                    'scale': { priority: 'CampaignSentral', reason: 'Campaign performance at scale' },
+                    'analytics': { priority: 'GTM Performance Dashboard', reason: 'Measure content effectiveness' },
+                    'engagement': { priority: 'GTM Performance Dashboard', reason: 'Track field engagement metrics' },
+                    'cross-sell': { priority: 'Field Advisor', reason: 'Cross-domain recommendations during calls' },
+                    'demo': { priority: 'Demo Mapping', reason: 'Visual proof points accelerate deal velocity' },
+                    'workshop': { priority: 'Workshop Mapping', reason: 'Hands-on experiences drive technical validation' },
+                    'hands-on': { priority: 'Workshop Mapping', reason: 'Technical depth through guided labs' }
+                };
+                
+                var matches = [];
+                for (var k in keywords) {
+                    if (input.indexOf(k) !== -1) matches.push(keywords[k]);
+                }
+                
+                if (matches.length === 0) {
+                    results.innerHTML = '<p style="color:var(--gray)">No specific keyword matches found. Try including terms like: pipeline, revenue, field enablement, content, analytics, prospecting, scale, demo, workshop.</p>';
+                } else {
+                    var html = '<h3 style="margin-bottom:0.5rem">Recommended Priorities:</h3><table><tr><th>#</th><th>Integration</th><th>Rationale</th></tr>';
+                    var seen = {};
+                    var rank = 1;
+                    for (var i=0; i<matches.length; i++) {
+                        if (!seen[matches[i].priority]) {
+                            seen[matches[i].priority] = true;
+                            html += '<tr><td><strong>' + rank + '</strong></td><td>' + matches[i].priority + '</td><td style="font-size:0.8rem;color:var(--gray)">' + matches[i].reason + '</td></tr>';
+                            rank++;
+                        }
+                    }
+                    html += '</table>';
+                    results.innerHTML = html;
+                }
+                results.style.display = 'block';
+            } catch(e) { console.error('Goal analysis error:', e); }
+        }
+    } catch(e) { console.error('Init error:', e); }
+    </script>
+    <!-- GA4 Placeholder -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>try{window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-XXXXXXXXXX');}catch(e){}</script>
+</body>
+</html>
